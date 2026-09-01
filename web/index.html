@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>계산기 에이전트 데모 · Calculator Agent Demo</title>
+<link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+
+<header class="page-header">
+  <h1>🧮 계산기 에이전트 데모</h1>
+  <p class="subtitle">Calculator Tool Agent — Observe → Think → Act</p>
+</header>
+
+<main>
+  <section class="input-panel">
+    <label for="question">질문을 입력하세요 (Type a question)</label>
+    <div class="input-row">
+      <input type="text" id="question" placeholder="예: (23 + 19) × 4는?" autocomplete="off" />
+      <button id="run-btn">실행 ▶ Run</button>
+    </div>
+    <div class="presets">
+      <span class="presets-label">예시 (examples):</span>
+      <button class="preset" data-q="(23 + 19) × 4는?">(23 + 19) × 4는?</button>
+      <button class="preset" data-q="100 / 4 - 5 계산해줘">100 / 4 - 5 계산해줘</button>
+      <button class="preset" data-q="안녕하세요, 오늘 날씨 어때요?">안녕하세요, 오늘 날씨 어때요?</button>
+    </div>
+  </section>
+
+  <section class="pipeline" aria-label="Observe Think Act pipeline">
+    <div class="stage" id="stage-observe" data-stage="observe">
+      <div class="stage-head">
+        <span class="stage-dot"></span>
+        <span class="stage-step">STEP 3</span>
+        <h2>Observe<br /><small>관찰</small></h2>
+      </div>
+      <p class="stage-desc">사용자 입력을 그대로 받습니다.<br />Takes the raw user input.</p>
+      <pre class="stage-output" id="out-observe">—</pre>
+    </div>
+
+    <div class="arrow">→</div>
+
+    <div class="stage" id="stage-think" data-stage="think">
+      <div class="stage-head">
+        <span class="stage-dot"></span>
+        <span class="stage-step">STEP 4</span>
+        <h2>Think<br /><small>판단</small></h2>
+      </div>
+      <p class="stage-desc">수식이 있는지 확인하고 도구 호출 여부를 결정합니다.<br />Decides whether a tool call is needed.</p>
+      <pre class="stage-output" id="out-think">—</pre>
+    </div>
+
+    <div class="arrow">→</div>
+
+    <div class="stage" id="stage-act" data-stage="act">
+      <div class="stage-head">
+        <span class="stage-dot"></span>
+        <span class="stage-step">STEP 5</span>
+        <h2>Act<br /><small>행동</small></h2>
+      </div>
+      <p class="stage-desc">필요하면 calculator() 도구를 실행하고 응답을 만듭니다.<br />Runs the tool if needed and builds the response.</p>
+      <pre class="stage-output" id="out-act">—</pre>
+    </div>
+  </section>
+
+  <section class="final-answer" id="final-answer" hidden>
+    <span class="final-label">최종 응답 (Final answer)</span>
+    <div class="final-text" id="final-text"></div>
+  </section>
+
+  <section class="console-panel">
+    <div class="console-head">콘솔 로그 (Console log)</div>
+    <pre class="console-log" id="console-log"></pre>
+  </section>
+</main>
+
+<footer>
+  <p>고급 비즈니스 프로그래밍 · 1주차 라이브 데모 &nbsp;|&nbsp; agent.py 의 observe() / think() / act() 를 그대로 호출합니다.</p>
+</footer>
+
+<script src="/script.js"></script>
+</body>
+</html>
