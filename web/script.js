@@ -98,12 +98,12 @@ async function runPipeline() {
     setActive("think");
     await sleep(200);
     if (data.think.tool_needed) {
-      const line = `[Think]   수식 감지 → 도구 호출: ${data.think.tool}("${data.think.expression}")`;
+      const line = `[Think]   LLM이 도구 호출을 요청했습니다: ${data.think.tool}("${data.think.expression}")`;
       log(line);
       await sleep(STEP_DELAY_MS);
       setDone("think", `도구 호출 필요 (tool call needed)\n${data.think.tool}("${data.think.expression}")`);
     } else {
-      log("[Think]   수식 없음 → 도구 호출 불필요 (no tool call needed)");
+      log("[Think]   LLM이 도구 호출이 필요 없다고 판단했습니다 (no tool call needed)");
       await sleep(STEP_DELAY_MS);
       setDone("think", "도구 호출 불필요\n(no tool call needed)");
     }

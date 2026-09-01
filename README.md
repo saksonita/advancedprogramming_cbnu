@@ -7,23 +7,28 @@ Week-by-week live demo code for the course.
 A minimal Observe → Think → Act agent loop, mirroring slides 12 and 16-17.
 
 - **Observe** (`observe`) — take the raw user input.
-- **Think** (`think`) — decide whether a tool call is needed. Since we
-  haven't wired up a real LLM API yet (slide 15), this is simulated with a
-  regex-based rule check today. In Week 2, a real LLM call replaces this
-  function.
+- **Think** (`think`) — calls the Groq API (a real LLM) with the `TOOLS`
+  spec so the model decides for itself whether/how to call `calculator`.
 - **Act** (`act`) — run the tool (`calculator`) if needed, and format the
   response.
 
 The `calculator` tool evaluates basic arithmetic expressions safely using
 Python's `ast` module (never `eval()`).
 
+### Setup
+
+```bash
+pip install -r requirements.txt
+cp .env.example .env   # then put your real key in .env: GROQ_KEY=...
+```
+
+`.env` is gitignored — never commit your real API key.
+
 ### Run it (console)
 
 ```bash
 python3 agent.py
 ```
-
-No external dependencies — standard library only (`ast`, `operator`, `re`).
 
 ### Run it (web UI)
 
