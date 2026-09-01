@@ -12,17 +12,23 @@ This mirrors STEP 1-5 from slides 16-17 ("Agent Structure in Python Code") 1:1.
     STEP 4  LLM 응답 해석        Think: decide to call a tool -> think()
     STEP 5  결과 반환            Act: run tool & respond      -> act()
 
-오늘은 구체적인 LLM API(OpenAI 등)를 아직 정하지 않았으므로(슬라이드 15),
-"LLM이 도구 호출 여부를 판단한다"는 부분을 규칙 기반(rule-based)으로 흉내 냅니다.
-Because we haven't picked a specific LLM API yet (slide 15), the "LLM decides
-whether to call a tool" part is simulated with a simple rule-based check today.
-다음 주(2주차)에는 이 think() 함수 자리에 실제 LLM 호출이 들어갑니다.
-Next week (Week 2), a real LLM call will replace the think() function here.
+think() 함수는 Groq API(실제 LLM)를 호출하여 도구 호출 여부와 파라미터를
+스스로 판단하게 합니다. API 키는 .env 파일의 GROQ_KEY에서 읽어옵니다.
+The think() function calls the Groq API (a real LLM) so the model itself
+decides whether/how to call a tool. The API key is read from GROQ_KEY in .env.
 """
 
 import ast
+import json
 import operator
-import re
+import os
+
+from dotenv import load_dotenv
+from groq import Groq
+
+load_dotenv()
+_client = Groq(api_key=os.environ["GROQ_KEY"])
+_MODEL = "openai/gpt-oss-120b"
 
 
 # ---------------------------------------------------------------------------
@@ -106,11 +112,6 @@ TOOLS = [
     }
 ]
 
-# 수식처럼 보이는 입력을 감지하기 위한 간단한 패턴
-# A simple pattern to detect input that "looks like" a math expression
-_MATH_PATTERN = re.compile(r"[\d().]\s*[+\-*/×x÷]\s*[\d(]")
-
-
 # ---------------------------------------------------------------------------
 # STEP 3. 사용자 입력 받기 — Observe 단계 (Get User Input — Observe)
 #          질문을 다음 단계(Think)에 전달할 형태로 정리
@@ -124,34 +125,37 @@ def observe(user_input: str) -> str:
 
 # ---------------------------------------------------------------------------
 # STEP 4. LLM 응답 해석 — Think 단계 (Parse LLM Response — Think)
-#          도구 호출이 필요한지 코드로 판단
-#          Code decides whether a tool call is needed
-#
-#          NOTE: 오늘은 실제 LLM을 호출하지 않고, 정규식으로 "수식이 포함되어
-#          있는가?"만 판단하는 규칙 기반 버전입니다. 다음 주에는 이 자리에
-#          LLM API 호출이 들어가고, LLM이 TOOLS 명세를 보고 스스로 도구 호출
-#          여부와 파라미터를 결정하게 됩니다.
-#          Today this is a rule-based stand-in (regex: "does this look like
-#          math?"). Next week, a real LLM call goes here and the model itself
-#          decides — using the TOOLS spec — whether and how to call a tool.
+#          Groq LLM을 호출하여 도구 호출이 필요한지 스스로 판단하게 함
+#          Calls the Groq LLM so it decides for itself whether a tool call is needed
 # ---------------------------------------------------------------------------
 
+_SYSTEM_PROMPT = (
+    "You must use the calculator tool whenever the user's message contains "
+    "an arithmetic expression to evaluate, even if it's mixed with other text "
+    "or a different language. Otherwise, respond without calling a tool."
+)
+
+
 def think(user_input: str) -> dict | None:
-    needs_tool = bool(_MATH_PATTERN.search(user_input))
+    response = _client.chat.completions.create(
+        model=_MODEL,
+        messages=[
+            {"role": "system", "content": _SYSTEM_PROMPT},
+            {"role": "user", "content": user_input},
+        ],
+        tools=TOOLS,
+        tool_choice="auto",
+    )
+    tool_calls = response.choices[0].message.tool_calls
 
-    if needs_tool:
-        expression = _extract_expression(user_input)
-        print(f"[Think]   수식을 감지했습니다 → 도구 호출 필요 (tool call needed): calculator({expression!r})")
-        return {"tool": "calculator", "arguments": {"expression": expression}}
+    if tool_calls:
+        call = tool_calls[0]
+        arguments = json.loads(call.function.arguments)
+        print(f"[Think]   LLM이 도구 호출을 요청했습니다 (LLM requested a tool call): {call.function.name}({arguments!r})")
+        return {"tool": call.function.name, "arguments": arguments}
 
-    print("[Think]   수식이 없습니다 → 도구 호출 불필요 (no tool call needed)")
+    print("[Think]   LLM이 도구 호출이 필요 없다고 판단했습니다 (LLM decided no tool call is needed)")
     return None
-
-
-def _extract_expression(user_input: str) -> str:
-    """사용자 문장에서 수식 부분만 뽑아냅니다. (Pull just the expression out of the sentence.)"""
-    match = re.search(r"[0-9().\s+\-*/×x÷]+", user_input)
-    return match.group().strip() if match else user_input
 
 
 # ---------------------------------------------------------------------------
