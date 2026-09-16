@@ -1,0 +1,8 @@
+{
+  "americano":   {"price": 3500, "category": "coffee"},
+  "latte":       {"price": 4500, "category": "coffee"},
+  "vanilla latte": {"price": 5000, "category": "coffee"},
+  "green tea":   {"price": 4000, "category": "tea"},
+  "cheesecake":  {"price": 6000, "category": "dessert"},
+  "croissant":   {"price": 3800, "category": "dessert"}
+}
