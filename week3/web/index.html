@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>도구 호출 데모 · Tool Calling Demo (Week 3)</title>
+<link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+
+<header class="page-header">
+  <h1>🔧 도구(Tool) 호출 데모</h1>
+  <p class="subtitle">Week 3 · 사내 헬프데스크 에이전트 — 재고 조회 · 할인 계산 · 주문 생성</p>
+</header>
+
+<nav class="tabs" role="tablist">
+  <button class="tab active" data-tab="loop" role="tab">① 도구 호출 루프<small>Tool loop · 실습 3–4</small></button>
+  <button class="tab" data-tab="validate" role="tab">② 스키마 검증<small>Validation · 실습 2</small></button>
+  <button class="tab" data-tab="evaluate" role="tab">③ 평가<small>Evaluation · 실습 8</small></button>
+  <button class="tab" data-tab="reference" role="tab">④ 참고<small>Specs · Data</small></button>
+</nav>
+
+<main>
+
+<!-- ======================================================================
+     탭 1 · 도구 호출 루프 (Tool loop)
+     ====================================================================== -->
+<section class="panel active" id="tab-loop">
+
+  <div class="card input-panel">
+    <div class="input-top">
+      <label for="question">질문을 입력하세요 (Ask the helpdesk agent)</label>
+      <div class="mode-toggle" role="radiogroup" aria-label="LLM mode">
+        <label><input type="radio" name="mode" value="fake" checked /> 가짜 LLM <small>무료 · 항상 같은 결과</small></label>
+        <label><input type="radio" name="mode" value="real" /> 진짜 LLM (Groq) <small>.env 의 GROQ_KEY</small></label>
+      </div>
+    </div>
+    <div class="input-row">
+      <input type="text" id="question" placeholder="예: A-100 재고 얼마나 남았어요?" autocomplete="off" />
+      <button id="run-btn" class="primary">실행 ▶ Run</button>
+    </div>
+    <div class="presets">
+      <span class="presets-label">예시 (examples):</span>
+      <button class="preset" data-q="안녕하세요!" data-hint="도구가 필요 없는 질문. 모델은 tool_calls 없이 바로 답한다 — 루프는 첫 턴에 끝난다.">도구 없음 — 안녕하세요!</button>
+      <button class="preset" data-q="A-100 재고 얼마나 남았어요?" data-hint="도구 하나. 모델이 보낸 tool_call(id · 이름 · 인자 JSON)과, 같은 id 로 돌아가는 결과를 확인하세요.">도구 하나 — A-100 재고</button>
+      <button class="preset" data-q="A-100을 20% 할인하면 50개에 얼마인가요?" data-hint="두 도구, 순서 있음. 재고 확인 → 할인 계산. 두 번째 호출은 첫 결과가 있어야 하므로 병렬로 부를 수 없다 (턴 2번).">두 도구 — 20% 할인 50개</button>
+      <button class="preset" data-q="A-999 재고 알려주세요" data-hint="형식은 맞지만 없는 제품. 스키마는 통과하고 실행에서 오류가 난다. 예외를 던지지 않고 오류를 결과로 돌려주니 모델이 사용자에게 알릴 수 있다.">오류 처리 — A-999</button>
+      <button class="preset" data-q="C-100 100개 주문할게요" data-hint="행동 도구. create_order 는 되돌릴 수 없어 사람의 승인을 기다린다. yes / no 둘 다 눌러 모델의 반응을 비교하세요.">승인 필요 — C-100 주문</button>
+      <button class="preset" data-q="D-100 3개 주문할게요" data-hint="승인은 했지만 품절. 도구가 규정(제3조)을 검사해 오류를 돌려준다 — 형식 검사와 사실 검사는 다른 층이다.">품절 주문 — D-100</button>
+    </div>
+    <p class="hint" id="hint" hidden></p>
+  </div>
+
+  <!-- 루프 흐름도 (the loop diagram) -->
+  <div class="loop-wrap">
+    <div class="loop-meta">
+      <span class="turn-badge" id="turn-badge">턴 0 / 5</span>
+      <span class="loop-title">도구 호출 루프 — 슬라이드 11~13 (한 턴 = LLM 호출 한 번)</span>
+    </div>
+    <div class="flow" id="flow">
+      <div class="stage" data-stage="user">
+        <div class="stage-head"><span class="stage-dot"></span><span class="stage-num">1</span><h2>질문<small>User</small></h2></div>
+        <p class="stage-desc">messages 에 user 메시지로 들어간다.</p>
+        <pre class="stage-output" data-out="user">—</pre>
+      </div>
+      <div class="arrow">→</div>
+      <div class="stage" data-stage="llm">
+        <div class="stage-head"><span class="stage-dot"></span><span class="stage-num">2</span><h2>LLM 판단<small>Think</small></h2></div>
+        <p class="stage-desc">도구 명세를 읽고 <b>tool_calls</b> 또는 최종 답을 낸다.</p>
+        <pre class="stage-output" data-out="llm">—</pre>
+      </div>
+      <div class="arrow">→</div>
+      <div class="stage" data-stage="validate">
+        <div class="stage-head"><span class="stage-dot"></span><span class="stage-num">3</span><h2>검증<small>Validate</small></h2></div>
+        <p class="stage-desc">이름 → 함수 매핑, 스키마 검사. 모델 출력을 그대로 믿지 않는다.</p>
+        <pre class="stage-output" data-out="validate">—</pre>
+      </div>
+      <div class="arrow">→</div>
+      <div class="stage" data-stage="approve">
+        <div class="stage-head"><span class="stage-dot"></span><span class="stage-num">4</span><h2>승인<small>Approve</small></h2></div>
+        <p class="stage-desc">되돌릴 수 없는 행동 도구만 사람이 yes / no.</p>
+        <pre class="stage-output" data-out="approve">—</pre>
+      </div>
+      <div class="arrow">→</div>
+      <div class="stage" data-stage="execute">
+        <div class="stage-head"><span class="stage-dot"></span><span class="stage-num">5</span><h2>실행 → 결과<small>Execute</small></h2></div>
+        <p class="stage-desc">함수를 실행하고 결과를 <b>같은 call id</b> 로 모델에게 돌려준다. 오류도 결과다.</p>
+        <pre class="stage-output" data-out="execute">—</pre>
+      </div>
+    </div>
+    <div class="loop-back" id="loop-back">
+      <span>↺ tool 메시지를 붙여 다시 ② LLM 판단으로 — 모델이 도구를 그만 부를 때까지, 최대 5턴</span>
+    </div>
+  </div>
+
+  <section class="final-answer" id="final-answer" hidden>
+    <span class="final-label">최종 응답 (Final answer)</span>
+    <div class="final-text" id="final-text"></div>
+  </section>
+
+  <div class="two-col">
+    <div class="card">
+      <div class="card-head">대화 메시지 <code>messages[]</code> <small>API 에 실제로 넘어가는 배열 · 슬라이드 12</small></div>
+      <div class="messages" id="messages"><p class="empty">질문을 실행하면 메시지가 하나씩 쌓입니다.</p></div>
+    </div>
+    <div class="card">
+      <div class="card-head">호출 로그 <code>TRACE</code> <small>안전장치 4 · 제출물</small></div>
+      <div class="table-wrap">
+        <table class="trace" id="trace">
+          <thead><tr><th>call id</th><th>도구</th><th>인자</th><th>결과</th><th>시간</th></tr></thead>
+          <tbody><tr class="empty-row"><td colspan="5">—</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="card safeguards">
+    <div class="card-head">반드시 들어가는 안전장치 네 가지 <small>agent_loop.py</small></div>
+    <ol>
+      <li><b>이름 → 함수 매핑</b> <code>FUNCS[name]</code> — 모델이 준 이름으로 직접 호출하지 않는다</li>
+      <li><b>없는 도구 처리</b> — 오류를 결과로 돌려주고 루프를 계속한다</li>
+      <li><b>반복 한도</b> <code>MAX_TURNS = 5</code> — 한도 없는 루프는 과금 사고가 된다</li>
+      <li><b>호출 로그</b> <code>TRACE</code> — call id · 인자 · 결과 · 소요 시간</li>
+    </ol>
+  </div>
+</section>
+
+<!-- ======================================================================
+     탭 2 · 스키마 검증 (Schema validation playground)
+     ====================================================================== -->
+<section class="panel" id="tab-validate">
+  <div class="card">
+    <div class="card-head">스키마 검증 놀이터 <small>슬라이드 14 — 구문 → 형태 → 타입 → 값, 그리고 사실</small></div>
+    <p class="lead">모델이 보냈다고 가정한 <b>도구 이름</b>과 <b>인자 JSON</b>을 직접 고쳐 보세요. 어느 층에서 걸리는지 바로 보입니다.</p>
+    <div class="validate-form">
+      <label>도구 이름 (tool name)
+        <input type="text" id="v-tool" list="tool-names" value="get_inventory" autocomplete="off" />
+        <datalist id="tool-names">
+          <option value="get_inventory"></option>
+          <option value="calc_discount"></option>
+          <option value="create_order"></option>
+        </datalist>
+      </label>
+      <label>인자 JSON (arguments)
+        <textarea id="v-args" rows="4" spellcheck="false">{"product_id": "A-100"}</textarea>
+      </label>
+      <button id="v-run" class="primary">검사 ▶ Validate</button>
+    </div>
+    <div class="presets">
+      <span class="presets-label">시나리오:</span>
+      <button class="vpreset" data-tool="get_inventory" data-args='{"product_id": "A-100"}'>통과</button>
+      <button class="vpreset" data-tool="get_inventory" data-args='{"product_id": "A-100"'>① 구문 — 괄호 누락</button>
+      <button class="vpreset" data-tool="get_inventory" data-args='{}'>② 형태 — 필수 인자 누락</button>
+      <button class="vpreset" data-tool="calc_discount" data-args='{"product_id": "A-100", "rate": "0.2"}'>③ 타입 — 문자열 rate</button>
+      <button class="vpreset" data-tool="calc_discount" data-args='{"product_id": "A-100", "rate": 20}'>④ 값 — rate 20 (20% ≠ 20)</button>
+      <button class="vpreset" data-tool="get_inventory" data-args='{"product_id": "a100"}'>④ 값 — 패턴 불일치</button>
+      <button class="vpreset" data-tool="get_inventory" data-args='{"product_id": "A-999"}'>⑤ 사실 — 스키마 통과, 없는 제품 ★</button>
+      <button class="vpreset" data-tool="get_stock" data-args='{"product_id": "A-100"}'>없는 도구 이름</button>
+      <button class="vpreset" data-tool="calc_discount" data-args='{"product_id": "A-100", "rate": 0.2}'>기본값 채우기 — quantity 생략</button>
+    </div>
+  </div>
+
+  <div class="layers" id="layers">
+    <div class="layer" data-layer="syntax"><span class="layer-num">①</span><h3>구문<small>syntax</small></h3><p>JSON 으로 읽히는가</p><pre class="layer-detail">—</pre></div>
+    <div class="arrow">→</div>
+    <div class="layer" data-layer="shape"><span class="layer-num">②</span><h3>형태<small>shape</small></h3><p>필수 인자가 있고, 모르는 인자가 없는가</p><pre class="layer-detail">—</pre></div>
+    <div class="arrow">→</div>
+    <div class="layer" data-layer="type"><span class="layer-num">③</span><h3>타입<small>types</small></h3><p>string / number / integer 가 맞는가</p><pre class="layer-detail">—</pre></div>
+    <div class="arrow">→</div>
+    <div class="layer" data-layer="value"><span class="layer-num">④</span><h3>값<small>values</small></h3><p>범위·패턴 — 0 ≤ rate ≤ 1, 'A-100'</p><pre class="layer-detail">—</pre></div>
+    <div class="arrow arrow-fact">→</div>
+    <div class="layer layer-fact" data-layer="fact"><span class="layer-num">⑤</span><h3>사실<small>execute</small></h3><p>형식이 맞아도 존재하는가 — 스키마가 아닌 도구가 검사</p><pre class="layer-detail">—</pre></div>
+  </div>
+  <p class="callout" id="v-callout" hidden></p>
+</section>
+
+<!-- ======================================================================
+     탭 3 · 평가 (Evaluation)
+     ====================================================================== -->
+<section class="panel" id="tab-evaluate">
+  <div class="card">
+    <div class="card-head">평가 스크립트 <code>evaluate.py</code> <small>슬라이드 19 — 네 층위를 점수로</small></div>
+    <p class="lead">고정된 테스트 케이스 6개를 돌려 <b>도구 선택 · 인자 · 과제 성공 · 비용</b>을 측정합니다. 실패는 <b>어느 층에서</b> 틀렸는지 표시합니다. (최종 과제에서는 케이스를 10–15개로 늘리세요.)</p>
+    <div class="input-row">
+      <div class="mode-toggle" role="radiogroup" aria-label="Evaluation LLM mode">
+        <label><input type="radio" name="eval-mode" value="fake" checked /> 가짜 LLM</label>
+        <label><input type="radio" name="eval-mode" value="real" /> 진짜 LLM (Groq)</label>
+      </div>
+      <button id="eval-run" class="primary">평가 실행 ▶ Evaluate</button>
+      <span class="spinner" id="eval-spinner" hidden>실행 중…</span>
+    </div>
+  </div>
+
+  <div class="scores" id="scores" hidden>
+    <div class="score"><span class="score-label">도구 선택<small>selection</small></span><span class="score-value" data-score="selection">—</span></div>
+    <div class="score"><span class="score-label">인자<small>arguments</small></span><span class="score-value" data-score="arguments">—</span></div>
+    <div class="score"><span class="score-label">과제 성공<small>task</small></span><span class="score-value" data-score="task">—</span></div>
+    <div class="score"><span class="score-label">비용 · 평균 시간<small>avg time</small></span><span class="score-value" data-score="avg_seconds">—</span></div>
+    <div class="score"><span class="score-label">비용 · 평균 호출<small>avg calls</small></span><span class="score-value" data-score="avg_calls">—</span></div>
+  </div>
+
+  <div class="card" id="eval-table-card" hidden>
+    <div class="card-head">케이스별 결과 <small>✓ 통과 · ✗ 실패한 층</small></div>
+    <div class="table-wrap">
+      <table class="eval" id="eval-table">
+        <thead><tr><th>질문</th><th>기대 도구</th><th>실제 도구</th><th>선택</th><th>인자</th><th>과제</th><th>답변</th><th>시간</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ======================================================================
+     탭 4 · 참고 (Reference)
+     ====================================================================== -->
+<section class="panel" id="tab-reference">
+  <div class="two-col">
+    <div class="card">
+      <div class="card-head">도구 명세 <code>TOOLS</code> <small>schemas.py — 모델이 읽는 사용 설명서</small></div>
+      <p class="lead">모델은 <b>description</b> 을 읽고 도구를 고른다 (실습 5). "언제 쓰는지 · 언제 쓰지 않는지" 까지 적는다.</p>
+      <div id="ref-tools"></div>
+    </div>
+    <div class="card">
+      <div class="card-head">재고 데이터 <code>data/inventory.csv</code> <small>채점 재현을 위해 고정</small></div>
+      <div class="table-wrap">
+        <table class="inventory" id="ref-inventory">
+          <thead><tr><th>ID</th><th>제품</th><th>정가</th><th>재고</th><th>안전재고</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="card-head" style="margin-top:1.25rem">규정 <code>data/order_policy.md</code></div>
+      <pre class="policy" id="ref-policy"></pre>
+      <div class="card-head" style="margin-top:1.25rem">시스템 프롬프트 <code>SYSTEM_PROMPT</code></div>
+      <pre class="policy" id="ref-system"></pre>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- 승인 대화상자 (approval dialog) — 실습 4 -->
+<div class="modal-backdrop" id="approval-modal" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="approval-title">
+    <h2 id="approval-title">⚠️ 승인이 필요합니다 (Approval required)</h2>
+    <p>모델이 <b>되돌릴 수 없는</b> 행동 도구를 호출하려 합니다. 실행할까요?</p>
+    <pre id="approval-call"></pre>
+    <div class="modal-actions">
+      <button id="approve-no">아니오 · No</button>
+      <button id="approve-yes" class="primary">예 · Yes</button>
+    </div>
+    <p class="modal-note">거절하면 오류가 결과로 모델에게 돌아가고, 모델이 어떻게 응답하는지 볼 수 있습니다.</p>
+  </div>
+</div>
+
+<footer>
+  <p>고급 비즈니스 프로그래밍 · 3주차 라이브 데모 &nbsp;|&nbsp; tools.py · schemas.py · llm.py · evaluate.py 를 그대로 호출합니다.</p>
+</footer>
+
+<script src="/script.js"></script>
+</body>
+</html>

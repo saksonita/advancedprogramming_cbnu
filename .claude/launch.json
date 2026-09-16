@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "week3-tool-demo",
+      "runtimeExecutable": ".venv/bin/python",
+      "runtimeArgs": ["week3/app.py"],
+      "port": 8600
+    },
+    {
+      "name": "week1-calculator-demo",
+      "runtimeExecutable": ".venv/bin/python",
+      "runtimeArgs": ["app.py"],
+      "port": 8500
+    }
+  ]
+}

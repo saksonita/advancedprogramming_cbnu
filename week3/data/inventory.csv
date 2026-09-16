@@ -1,0 +1,8 @@
+product_id,name,price,stock,safety_stock,category
+A-100,무선 마우스 (Wireless Mouse),12000,42,80,accessory
+A-200,기계식 키보드 (Mechanical Keyboard),89000,120,60,accessory
+B-100,27인치 모니터 (27" Monitor),245000,18,20,display
+B-200,34인치 커브드 모니터 (34" Curved Monitor),520000,6,10,display
+C-100,USB-C 허브 (USB-C Hub),35000,210,100,accessory
+C-200,노트북 거치대 (Laptop Stand),28000,75,40,accessory
+D-100,웹캠 (Webcam),65000,0,30,peripheral

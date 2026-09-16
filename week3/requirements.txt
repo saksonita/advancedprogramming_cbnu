@@ -1,0 +1,6 @@
+# 3주차 실습 (Week 3 practices)
+# 1 · 2 · 6 · 7단계는 표준 라이브러리만으로 동작합니다.
+# Practices 1, 2, 6 and 7 run on the standard library alone.
+groq>=0.11.0          # 3 · 4 · 5 · 8단계에서 진짜 LLM을 쓸 때 (--real)
+python-dotenv>=1.0.0  # .env에서 GROQ_KEY 읽기
+pytest>=8.0.0         # 선택 사항 — test_tools.py는 pytest 없이도 실행됩니다
