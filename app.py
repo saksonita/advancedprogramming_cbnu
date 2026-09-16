@@ -23,7 +23,7 @@ from pathlib import Path
 from agent import act, observe, think
 
 WEB_DIR = Path(__file__).parent / "web"
-PORT = 8000
+PORT = 8500
 
 
 class AgentDemoHandler(BaseHTTPRequestHandler):
