@@ -1,14 +1,15 @@
-"""Command-line chat with the café agent.
-
-TODO (Task 4):
-- Create a CafeAgent.
-- Loop: read input with prompt "You: ", quit on "exit" or "quit",
-  otherwise print "Agent: " + agent.run(text).
-"""
+"""Command-line chat with the café agent."""
+from src.agent import CafeAgent
 
 
 def main():
-    raise NotImplementedError("Task 4")
+    agent = CafeAgent()
+    while True:
+        text = input("You: ")
+        if text.strip().lower() in ("exit", "quit"):
+            break
+        result = agent.run(text)
+        print("Agent:", result["answer"])
 
 
 if __name__ == "__main__":

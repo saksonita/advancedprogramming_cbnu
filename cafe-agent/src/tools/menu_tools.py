@@ -1,9 +1,35 @@
-"""Menu tools. TODO (Task 3): implement get_menu and GET_MENU_SCHEMA per docs/03_tool_spec.md."""
+"""Menu tools."""
+from src.tools.data_store import load
 
 
 def get_menu(category: str | None = None) -> dict:
     """Get all menu items with prices (KRW) and categories, optionally filtered by category."""
-    raise NotImplementedError("Task 3")
+    menu = load("menu")
+    valid_categories = list(dict.fromkeys(info["category"] for info in menu.values()))
+    if category is not None and category not in valid_categories:
+        return {"error": f"Unknown category '{category}'. Valid: {', '.join(valid_categories)}."}
+    items = [
+        {"name": name, "price": info["price"], "category": info["category"]}
+        for name, info in menu.items()
+        if category is None or info["category"] == category
+    ]
+    return {"items": items}
 
 
-GET_MENU_SCHEMA = None  # TODO: follow the format of CALCULATE_SCHEMA in calculator.py
+GET_MENU_SCHEMA = {
+    "type": "function",
+    "function": {
+        "name": "get_menu",
+        "description": "Get all menu items with their prices in KRW and categories.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "category": {
+                    "type": "string",
+                    "description": "Filter by category: coffee, tea, or dessert.",
+                }
+            },
+            "required": [],
+        },
+    },
+}

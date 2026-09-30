@@ -80,6 +80,22 @@ def test_sales_report_empty():
     assert get_sales_report()["best_seller"] is None
 
 
+# ---- My tool: restock_item (Task 12) ----
+def test_restock_item_ok():
+    from src.tools.stock_tools import restock_item
+    assert restock_item("croissant", 15) == {"item": "croissant", "added": 15, "new_quantity": 15}
+
+
+def test_restock_item_bad_qty():
+    from src.tools.stock_tools import restock_item
+    assert "error" in restock_item("croissant", 0)
+
+
+def test_restock_item_not_found():
+    from src.tools.stock_tools import restock_item
+    assert "get_menu" in restock_item("mocha", 5)["error"]
+
+
 # ---- Registry check (run after Task 6) ----
 def test_registry_consistent():
     from src.tools import TOOL_FUNCTIONS, TOOL_SCHEMAS

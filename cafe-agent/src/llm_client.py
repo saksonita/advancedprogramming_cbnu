@@ -1,13 +1,20 @@
-"""Thin wrapper around the OpenAI-compatible chat API (Groq or xAI).
+"""Thin wrapper around the OpenAI-compatible chat API (Groq or xAI)."""
+from openai import OpenAI
 
-TODO (Task 1):
-- Create an OpenAI client with API_KEY and BASE_URL from config.
-- Implement chat(messages, tools=None) -> the assistant message object
-  (response.choices[0].message). Only pass `tools` when it is not None.
-- Add a __main__ block that sends [{"role": "user", "content": "Hello"}] and prints the reply.
-"""
+from src.config import API_KEY, BASE_URL, MODEL
+
+_client = OpenAI(api_key=API_KEY, base_url=BASE_URL)
 
 
 def chat(messages: list[dict], tools: list[dict] | None = None):
     """Send messages (and optional tool schemas) to the LLM and return the assistant message."""
-    raise NotImplementedError("Task 1")
+    kwargs = {"model": MODEL, "messages": messages}
+    if tools is not None:
+        kwargs["tools"] = tools
+    response = _client.chat.completions.create(**kwargs)
+    return response.choices[0].message
+
+
+if __name__ == "__main__":
+    reply = chat([{"role": "user", "content": "Hello"}])
+    print(reply.content)
