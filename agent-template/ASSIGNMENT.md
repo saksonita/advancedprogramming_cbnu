@@ -10,7 +10,7 @@ The agent loop, the LLM client, and the config do not know anything about coffee
 
 ## What your team makes
 
-An assistant for a user and a problem you choose. For example: a dorm laundry room, a club treasurer, a pet clinic front desk, a study planner. These are only starters. An idea nobody else has scores higher.
+An assistant for a user and a problem you choose. For example: a dorm laundry room, a club treasurer, a pet clinic front desk, a study planner. These are only starters. An idea nobody else has is the best kind.
 
 ## Requirements
 
@@ -41,7 +41,7 @@ Ask: *what does my user need that a café owner never needs?* That answer is you
 
 ## Team roles
 
-Work in teams of 3. Everyone owns at least one tool: you write its spec, and you can explain its code.
+Work in teams of 2. Each of you owns two tools: you write their specs, and you can explain their code.
 
 | Role | Job |
 |---|---|
@@ -50,7 +50,7 @@ Work in teams of 3. Everyone owns at least one tool: you write its spec, and you
 | Driver | Types the prompts for the AI coding assistant. One tool at a time. |
 | Tester | Writes tests and scenarios. Runs the format checker after every tool. |
 
-In a team of 2, the Lead is also the Designer.
+With two people, one of you is Lead and Designer. The other is Driver and Tester.
 
 ## Steps
 
@@ -60,10 +60,9 @@ Follow `docs/04_tasks.md`. In short:
 |---|---|---|
 | 1. Idea | Pick a user and a problem. Fill in `docs/01_brief.md`. | 10 min |
 | 2. Design | Write data files (`data/*.json`), tool specs (`docs/03_tool_spec.md`), and scenarios (`tests/scenarios.md`). **No code yet.** | 25 min |
-| 3. Spec swap | Give your specs and scenarios to another team. They read only the specs and predict which tools each scenario will call. If they guess wrong, your descriptions are unclear. Fix them. | 10 min |
-| 4. Build | One tool at a time: implement, write the schema, register, test. | 45 min |
-| 5. Verify | Run the format checker. Run all three scenarios. | 10 min |
-| 6. Demo | Show it to the class. | 3 min per team |
+| 3. Build | One tool at a time: implement, write the schema, register, test. | 45 min |
+| 4. Verify | Run the format checker. Run all three scenarios. | 10 min |
+| 5. Demo | Show it to the class. | 3 min per team |
 
 ## Demo (3 minutes)
 
@@ -71,20 +70,6 @@ Follow `docs/04_tasks.md`. In short:
 2. Run your 3-tool scenario live. Show the tool calls.
 3. Run your error scenario live.
 4. The instructor picks one team member and one tool. That person explains the code.
-
-## Feedback
-
-This is practice, not a graded assignment. The scores below are not recorded anywhere. They exist so you can see which part of your agent to improve next time. A 0 means "here is the thing to fix", nothing more.
-
-You get feedback on five points, 0–2 each. Other teams score you too.
-
-| Point | 0 | 1 | 2 |
-|---|---|---|---|
-| **Originality** | A reskin of the café agent | New domain, but the tools are café tools with new names | A real problem, with tools that only make sense in this domain |
-| **Tool design** | Vague descriptions, errors with no hint | Clear descriptions, but results are big or errors do not say what to do next | Clear descriptions, small results, every error tells the agent what to try next |
-| **Combination** | Each question needs one tool | Tools chain, but only in the café pattern (look up, then calculate) | A scenario that only works because your tools chain in a new way |
-| **Format** | Format checker fails | Checker passes, but spec and code disagree somewhere | Spec, schema, registry, tests, and scenarios all agree |
-| **Understanding** | Cannot explain the code | Can explain what a tool does | Can explain *why* the description, parameters, and errors are written that way |
 
 ## Common mistakes
 

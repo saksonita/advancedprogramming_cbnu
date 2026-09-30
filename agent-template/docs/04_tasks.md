@@ -14,17 +14,16 @@ Prompt for your AI assistant (Part 2 only):
 - [ ] **3. Tool map.** Fill in the "Tool map" table in `docs/03_tool_spec.md`. Check the requirements in `ASSIGNMENT.md` and do the reskin test.
 - [ ] **4. Tool specs.** Each member writes the spec for the tool they own in `docs/03_tool_spec.md`. Every error needs a hint.
 - [ ] **5. Scenarios.** Fill in `tests/scenarios.md`: a 3-tool chain, an error recovery, a confirmation before a write.
-- [ ] **6. Spec swap.** Give your specs and scenario prompts (hide the "Expected tool calls" column) to another team. They predict the tool calls. Fix every description they misread.
 
 ## Part 2 — Build (one tool per prompt)
-- [ ] **7. System prompt.** Fill in `prompts/system_prompt.md`.
-- [ ] **8. Tool 1:** `<name>`. Implement, write the schema, register it in `src/tools/__init__.py`, add one ok test and one error test to `tests/test_tools.py`. Check: `python -m pytest tests -k <name>`.
-- [ ] **9. Tool 2:** `<name>`. Same steps.
-- [ ] **10. Tool 3:** `<name>`. Same steps.
-- [ ] **11. Tool 4:** `<name>`. Same steps.
-- [ ] **12. More tools (optional).** Same steps.
+- [ ] **6. System prompt.** Fill in `prompts/system_prompt.md`.
+- [ ] **7. Tool 1:** `<name>`. Implement, write the schema, register it in `src/tools/__init__.py`, add one ok test and one error test to `tests/test_tools.py`. Check: `python -m pytest tests -k <name>`.
+- [ ] **8. Tool 2:** `<name>`. Same steps.
+- [ ] **9. Tool 3:** `<name>`. Same steps.
+- [ ] **10. Tool 4:** `<name>`. Same steps.
+- [ ] **11. More tools (optional).** Same steps.
 
 ## Part 3 — Verify
-- [ ] **13. Format check.** `python -m pytest tests` passes with no failures.
-- [ ] **14. Scenarios.** Run every scenario with `python -m src.main`. If the agent picks the wrong tool or gives up after an error, improve the tool description, the error hint, or the system prompt — not the agent code.
-- [ ] **15. Demo.** Practice the 3-minute demo in `ASSIGNMENT.md`. Every member can explain their own tool.
+- [ ] **12. Format check.** `python -m pytest tests` passes with no failures.
+- [ ] **13. Scenarios.** Run every scenario with `python -m src.main`. If the agent picks the wrong tool or gives up after an error, improve the tool description, the error hint, or the system prompt — not the agent code.
+- [ ] **14. Demo.** Practice the 3-minute demo in `ASSIGNMENT.md`. Every member can explain their own tool.

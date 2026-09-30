@@ -13,7 +13,7 @@ def test_calculate_error_has_hint():
     assert "error" in calculate("import os")
 
 
-# ---- Task 8: <tool name> ----
+# ---- Task 7: <tool name> ----
 # def test_<tool>_ok():
 #     from src.tools.<your>_tools import <tool>
 #     assert <tool>(<good input>) == <the "Returns" example from your spec>

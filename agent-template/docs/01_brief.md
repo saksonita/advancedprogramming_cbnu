@@ -4,7 +4,7 @@ Replace every `<...>`. Keep it to one page.
 
 ## Team
 - Agent name: <name>
-- Members and roles: <name — Lead and Designer>, <name — Driver>, <name — Tester>
+- Members and roles: <name — Lead and Designer>, <name — Driver and Tester>
 
 ## Goal
 <Two sentences. Who types the questions, and what does the assistant do for them with tools?>

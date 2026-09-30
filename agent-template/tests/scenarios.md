@@ -13,8 +13,3 @@ Write these BEFORE you build the tools (Task 5). Rows A–C are required.
 | D | <your choice> | <prompt> | <...> | <...> |
 
 > After testing a write tool, reset your data: restore the changed `data/*.json` files. Keep a copy of `data/` before you start testing.
-
-## Spec swap notes (Task 6)
-Which tool calls did the other team predict wrong? What did you change in the descriptions?
-
-_Write your notes here._
