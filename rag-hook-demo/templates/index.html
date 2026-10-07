@@ -42,6 +42,20 @@
   .receipt textarea { width: 100%; min-height: 330px; border: 0; border-top: 1px dashed var(--line);
     padding-top: 14px; resize: vertical; font: 0.92rem/1.6 var(--receipt); color: var(--espresso); background: transparent; }
   .receipt textarea:focus { outline: 2px solid var(--matcha); outline-offset: 4px; }
+  .file-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--line); }
+  .file-bar button { font: 700 0.85rem var(--receipt); padding: 6px 10px; border-radius: 6px; cursor: pointer;
+    border: 1.5px solid var(--espresso); background: var(--paper); color: var(--espresso); }
+  .file-bar button:hover { background: var(--milk); }
+  .file-bar .btn-save { background: var(--espresso); color: var(--milk); }
+  .file-bar .btn-save:hover { background: var(--roast); }
+  .file-status { width: 100%; font: 0.78rem var(--receipt); color: var(--smoke); margin: 0; }
+  .file-status.synced { color: var(--matcha); }
+  .file-status.dirty { color: #A1301F; }
+  .file-status.changed { color: var(--matcha); font-weight: 700; }
+  @media (prefers-reduced-motion: no-preference) {
+    .receipt textarea.flash { animation: reload 0.9s ease-out; }
+    @keyframes reload { 0% { background: var(--matcha-tint); } 100% { background: transparent; } }
+  }
 
   /* 질문 영역 */
   .ask label { display: block; font: 500 1.1rem var(--display); margin-bottom: 8px; }
@@ -112,6 +126,11 @@
       <h2>빈 브릿지 카페</h2>
       <p class="hint">cafe_info.txt (여기서 바로 수정할 수 있습니다)</p>
       <textarea id="context" spellcheck="false" aria-label="카페 정보">{{ cafe_info }}</textarea>
+      <div class="file-bar">
+        <button type="button" id="btn-reload">파일에서 다시 불러오기</button>
+        <button type="button" id="btn-save" class="btn-save">파일에 저장</button>
+        <p class="file-status synced" id="file-status">디스크의 cafe_info.txt와 같음</p>
+      </div>
     </aside>
 
     <main>
@@ -186,6 +205,63 @@
     }
   }
 
+  // ---- cafe_info.txt 와 동기화 -------------------------------------------
+  // 디스크의 파일이 기준입니다. 2초마다 수정 시각을 확인해서 에디터로 파일을
+  // 고치면 영수증을 자동으로 갱신하고, "파일에 저장"은 화면의 내용을 디스크에 씁니다.
+  const statusEl = document.getElementById("file-status");
+  let loadedContent = contextEl.value;   // 마지막으로 디스크에서 읽은 내용
+  let loadedMtime = null;                // 그 때의 파일 수정 시각
+  let diskChanged = false;               // 디스크가 바뀌었지만 화면에 반영 못 한 상태
+
+  function setStatus(text, kind) { statusEl.textContent = text; statusEl.className = "file-status " + kind; }
+  function timeOf(mtime) { return new Date(mtime * 1000).toLocaleTimeString("ko-KR"); }
+
+  function applyFromDisk(data) {
+    contextEl.value = data.content;
+    loadedContent = data.content;
+    loadedMtime = data.mtime;
+    diskChanged = false;
+    contextEl.classList.remove("flash"); void contextEl.offsetWidth; contextEl.classList.add("flash");
+    setStatus("디스크에서 다시 불러옴 (" + timeOf(data.mtime) + ")", "changed");
+    setTimeout(updateStatus, 2500);
+  }
+
+  function updateStatus() {
+    if (diskChanged) setStatus("디스크의 파일이 바뀌었습니다. 화면 내용을 유지하려면 '파일에 저장', 아니면 '다시 불러오기'", "dirty");
+    else if (contextEl.value !== loadedContent) setStatus("화면에서 수정됨, 아직 파일에 저장되지 않음", "dirty");
+    else setStatus("디스크의 cafe_info.txt와 같음" + (loadedMtime ? " (" + timeOf(loadedMtime) + ")" : ""), "synced");
+  }
+  contextEl.addEventListener("input", updateStatus);
+
+  async function checkDisk() {
+    try {
+      const data = await (await fetch("/info")).json();
+      if (loadedMtime === null) { loadedMtime = data.mtime; loadedContent = data.content; updateStatus(); return; }
+      if (data.mtime === loadedMtime) return;
+      if (contextEl.value === loadedContent) applyFromDisk(data);   // 화면에 미저장 수정이 없으면 자동 반영
+      else { diskChanged = true; loadedMtime = data.mtime; loadedContent = data.content; updateStatus(); }
+    } catch (err) { /* 서버가 잠시 꺼진 경우: 다음 주기에 다시 시도 */ }
+  }
+  setInterval(checkDisk, 2000);
+  checkDisk();
+
+  document.getElementById("btn-reload").addEventListener("click", async () => {
+    const data = await (await fetch("/info")).json();
+    applyFromDisk(data);
+  });
+
+  document.getElementById("btn-save").addEventListener("click", async () => {
+    const res = await fetch("/info", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content: contextEl.value })
+    });
+    const data = await res.json();
+    loadedContent = contextEl.value; loadedMtime = data.mtime; diskChanged = false;
+    setStatus("cafe_info.txt에 저장됨 (" + timeOf(data.mtime) + ")", "changed");
+    setTimeout(updateStatus, 2500);
+  });
+
+  // ---- 질문 보내기 ----------------------------------------------------------
   actionButtons.forEach(btn => btn.addEventListener("click", async () => {
     if (!questionEl.value.trim()) { show("plain", "먼저 질문을 입력하세요.", "error"); return; }
     actionButtons.forEach(b => b.disabled = true);
