@@ -6,6 +6,8 @@
 <title>왜 RAG인가? 빈 브릿지 카페 데모</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/15.0.7/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.2.4/purify.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Courier+Prime&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -67,7 +69,18 @@
   .plain .sub { color: var(--smoke); }
   .rag { border: 2px solid var(--matcha); background: var(--matcha-tint); }
   .rag .sub { color: var(--matcha); }
-  .answer { white-space: pre-wrap; flex: 1; font-size: 1.15rem; }
+  .answer { flex: 1; font-size: 1.15rem; }
+  .answer > :first-child { margin-top: 0; }
+  .answer > :last-child { margin-bottom: 0; }
+  .answer p, .answer ul, .answer ol { margin: 0 0 0.7em; }
+  .answer h1, .answer h2, .answer h3, .answer h4 { font: 700 1.05rem var(--display); margin: 1em 0 0.4em; }
+  .answer hr { border: 0; border-top: 1px dashed var(--line); margin: 0.9em 0; }
+  .answer table { border-collapse: collapse; width: 100%; font-size: 0.92rem; margin: 0 0 0.9em; background: var(--paper); }
+  .answer th, .answer td { border: 1px solid var(--line); padding: 6px 10px; text-align: left; vertical-align: top; }
+  .answer th { background: var(--milk); }
+  .answer code { font: 0.9em var(--receipt); background: var(--milk); padding: 1px 4px; border-radius: 4px; }
+  .answer pre { white-space: pre-wrap; font: 0.85rem/1.5 var(--receipt); background: var(--paper); padding: 10px; border-radius: 8px; }
+  .answer.empty, .answer.error { white-space: pre-wrap; }
   .answer.empty { color: var(--smoke); font-style: italic; font-size: 1rem; }
   .answer.error { color: #A1301F; font-size: 1rem; }
   .attached { display: inline-block; font: 0.8rem var(--receipt); background: var(--paper); color: var(--espresso);
@@ -149,7 +162,11 @@
   function show(mode, text, kind) {
     const out = document.getElementById("out-" + mode);
     out.className = "answer " + (kind || "") + " fresh";
-    out.textContent = text;
+    if (kind) {                      // 상태·오류 메시지는 그대로 표시
+      out.textContent = text;
+    } else {                         // 모델 답변은 Markdown으로 렌더링
+      out.innerHTML = DOMPurify.sanitize(marked.parse(text || ""));
+    }
   }
 
   async function ask(mode) {
