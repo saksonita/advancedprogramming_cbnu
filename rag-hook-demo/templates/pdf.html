@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>내 PDF와 대화하기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/15.0.7/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.2.4/purify.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Courier+Prime&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --milk: #F3F5F2; --paper: #FFFFFF; --espresso: #2A1B12; --roast: #6B5547; --smoke: #9A8E84;
+    --matcha: #3F6B35; --matcha-tint: #E7EFE3; --line: #D9D5CF; --alert: #A1301F; --honey: #FFF3C4;
+    --body: "Atkinson Hyperlegible", "Noto Sans KR", system-ui, sans-serif;
+    --display: "Bricolage Grotesque", "Noto Sans KR", system-ui, sans-serif;
+    --receipt: "Courier Prime", "Courier New", "Noto Sans KR", monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--milk); color: var(--espresso); font: 18px/1.55 var(--body); }
+  .wrap { max-width: 1320px; margin: 0 auto; padding: 32px 28px 48px; }
+  header { margin-bottom: 28px; }
+  h1 { font: 700 clamp(2rem, 4vw, 3.1rem)/1.05 var(--display); margin: 0 0 6px; letter-spacing: -0.02em; }
+  header p { margin: 0; color: var(--roast); }
+  .nav { margin-top: 10px; font-size: 0.95rem; }
+  .nav a { color: var(--matcha); font-weight: 700; }
+
+  .layout { display: grid; grid-template-columns: 400px 1fr; gap: 32px; align-items: start; }
+
+  /* 왼쪽: 문서 영수증 = 청크 목록 */
+  .receipt { background: var(--paper); padding: 24px 22px 30px;
+    -webkit-mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% / 16px 100%;
+            mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% / 16px 100%; }
+  .receipt h2 { font: 700 1.05rem var(--receipt); margin: 0 0 4px; text-align: center; }
+  .receipt .hint { font: 0.8rem var(--receipt); color: var(--smoke); text-align: center; margin: 0 0 14px; }
+  .drop { display: block; border: 2px dashed var(--line); border-radius: 10px; padding: 18px 14px; text-align: center; cursor: pointer;
+    font: 0.92rem var(--body); color: var(--roast); transition: border-color .15s, background .15s; }
+  .drop:hover, .drop.over { border-color: var(--matcha); background: var(--matcha-tint); }
+  .drop strong { display: block; font: 700 1.02rem var(--display); color: var(--espresso); margin-bottom: 4px; }
+  .drop input { display: none; }
+  .meta { font: 0.82rem/1.6 var(--receipt); color: var(--roast); margin: 14px 0 0; padding-top: 12px; border-top: 1px dashed var(--line); white-space: pre-wrap; }
+  .meta.warn { color: var(--alert); }
+  .chunks-head { display: flex; justify-content: space-between; align-items: baseline; margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--line); }
+  .chunks-head h3 { font: 700 0.9rem var(--receipt); margin: 0; }
+  .chunks-head span { font: 0.75rem var(--receipt); color: var(--smoke); }
+  .chunks { max-height: 62vh; overflow-y: auto; margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
+  .chunk { font: 0.78rem/1.5 var(--receipt); padding: 8px 10px; border-radius: 6px; border: 1px solid transparent; background: var(--milk); color: var(--roast); white-space: pre-wrap; transition: background .2s; }
+  .chunk b { display: block; color: var(--smoke); font-weight: 400; margin-bottom: 2px; }
+  .chunk.hit { background: var(--honey); border-color: #E2C76A; color: var(--espresso); }
+  .chunk.hit b { color: var(--espresso); font-weight: 700; }
+  .chunks .none { font: italic 0.85rem var(--body); color: var(--smoke); padding: 8px 0; }
+
+  /* 오른쪽: 대화 */
+  .chat { border: 2px solid var(--matcha); background: var(--matcha-tint); border-radius: 14px; padding: 20px 22px; display: flex; flex-direction: column; min-height: 520px; }
+  .chat h3 { font: 700 1.25rem var(--display); margin: 0 0 2px; }
+  .chat .sub { font-size: 0.9rem; color: var(--matcha); margin: 0 0 14px; }
+  .modes { display: flex; flex-wrap: wrap; border: 2px solid var(--matcha); border-radius: 10px; overflow: hidden; width: fit-content; max-width: 100%; }
+  .modes label { font: 700 0.88rem var(--body); padding: 8px 13px; cursor: pointer; color: var(--matcha); background: var(--paper); border-right: 1px solid var(--line); }
+  .modes label:last-child { border-right: 0; }
+  .modes input { display: none; }
+  .modes input:checked + label { background: var(--matcha); color: #fff; }
+  .modes-help { font-size: 0.85rem; color: var(--roast); margin: 8px 0 14px; min-height: 1.4em; }
+  .modes-help code { font: 0.85em var(--receipt); background: var(--paper); padding: 1px 5px; border-radius: 4px; }
+  .thread { flex: 1; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; max-height: 56vh; padding-right: 4px; }
+  .msg { max-width: 88%; padding: 12px 16px; border-radius: 14px; font-size: 1.05rem; }
+  .msg.user { align-self: flex-end; background: var(--espresso); color: var(--milk); border-bottom-right-radius: 4px; white-space: pre-wrap; }
+  .msg.assistant { align-self: flex-start; background: var(--paper); border-bottom-left-radius: 4px; }
+  .msg.status { align-self: flex-start; color: var(--smoke); font-style: italic; font-size: 0.95rem; background: transparent; padding: 4px 0; }
+  .msg.error { align-self: flex-start; color: var(--alert); background: transparent; padding: 4px 0; font-size: 0.95rem; white-space: pre-wrap; }
+  .msg > :first-child { margin-top: 0; } .msg > :last-child { margin-bottom: 0; }
+  .msg p, .msg ul, .msg ol { margin: 0 0 0.7em; }
+  .msg h1, .msg h2, .msg h3, .msg h4 { font: 700 1.05rem var(--display); margin: 1em 0 0.4em; }
+  .msg table { border-collapse: collapse; width: 100%; font-size: 0.92rem; margin: 0 0 0.9em; }
+  .msg th, .msg td { border: 1px solid var(--line); padding: 6px 10px; text-align: left; vertical-align: top; }
+  .msg th { background: var(--milk); }
+  .msg code { font: 0.9em var(--receipt); background: var(--milk); padding: 1px 4px; border-radius: 4px; }
+  .msg pre { white-space: pre-wrap; font: 0.85rem/1.5 var(--receipt); background: var(--milk); padding: 10px; border-radius: 8px; }
+  .used { display: block; font: 0.78rem/1.5 var(--receipt); color: var(--matcha); margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--line); white-space: pre-wrap; }
+  .used .q { color: var(--roast); }
+  @media (prefers-reduced-motion: no-preference) {
+    .msg.fresh { animation: pour 0.4s ease-out; }
+    @keyframes pour { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  }
+  .empty-thread { color: var(--smoke); font-style: italic; font-size: 1rem; }
+  .composer { display: flex; gap: 10px; margin-top: 16px; }
+  .composer input { flex: 1; font: 1.15rem var(--body); padding: 12px 14px; border: 2px solid var(--espresso); border-radius: 10px; background: var(--paper); color: var(--espresso); }
+  .composer input:focus-visible { outline: 3px solid var(--matcha); outline-offset: 2px; }
+  .composer button { font: 700 1rem var(--body); padding: 12px 18px; border-radius: 10px; cursor: pointer; border: 2px solid var(--matcha); background: var(--matcha); color: #fff; }
+  .composer button:disabled, .composer input:disabled { opacity: 0.5; cursor: not-allowed; }
+  .tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 10px; }
+  .tools button { font: 0.85rem var(--body); padding: 5px 10px; border-radius: 999px; cursor: pointer; border: 1px solid var(--line); background: var(--paper); color: var(--roast); }
+  .tools button:hover { border-color: var(--roast); color: var(--espresso); }
+  .presets { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 14px; }
+  .presets button { font: 0.9rem var(--body); padding: 6px 12px; border-radius: 999px; cursor: pointer; border: 1px solid var(--line); background: var(--paper); color: var(--roast); }
+  .presets button:hover { border-color: var(--roast); color: var(--espresso); }
+  details { margin-top: 14px; font-size: 0.9rem; }
+  summary { cursor: pointer; color: var(--roast); }
+  details pre { white-space: pre-wrap; font: 0.82rem/1.5 var(--receipt); background: var(--paper); padding: 12px; border-radius: 8px; border: 1px solid var(--line); max-height: 300px; overflow: auto; }
+  button:focus-visible { outline: 3px solid var(--matcha); outline-offset: 2px; }
+
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; }
+    .chunks { max-height: 40vh; }
+    .thread { max-height: none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>내 PDF와 대화하기</h1>
+    <p>PDF를 올리고 다섯 가지 방식으로 모델에게 문서를 건네 봅니다. 통째로 붙이기 → 키워드 검색 → 의미 검색 → 리랭커 → 모델이 직접 검색 도구 호출. 사용 중인 모델: {{ model }}</p>
+    <p class="nav"><a href="/">← 카페 데모로 돌아가기</a></p>
+  </header>
+
+  <div class="layout">
+    <aside class="receipt">
+      <h2>내 문서</h2>
+      <p class="hint">문단 단위로 잘린 청크가 아래에 표시됩니다</p>
+      <label class="drop" id="drop">
+        <input type="file" id="file" accept="application/pdf,.pdf">
+        <strong>PDF 파일을 끌어다 놓거나 클릭해서 선택</strong>
+        강의 자료, 보고서, 논문 등 글자가 들어 있는 PDF (최대 20MB)
+      </label>
+      <p class="meta" id="meta">아직 올린 문서가 없습니다.</p>
+      <div class="chunks-head"><h3>청크 (chunks)</h3><span id="chunk-count"></span></div>
+      <div class="chunks" id="chunks"><p class="none">PDF를 올리면 문단별로 잘린 조각이 여기 나타납니다. 검색에 뽑힌 조각은 노란색으로 표시됩니다.</p></div>
+    </aside>
+
+    <main>
+      <section class="chat">
+        <h3>모델 + 내 문서</h3>
+        <p class="sub">모델에게 문서를 어떻게 건넬지 고르세요. 질문마다 바꿔 가며 비교할 수 있습니다.</p>
+        <div class="modes" role="radiogroup" aria-label="문서를 넣는 방식">
+          <input type="radio" name="mode" id="mode-full" value="full" checked><label for="mode-full">① 전체 붙여 넣기</label>
+          <input type="radio" name="mode" id="mode-keyword" value="keyword"><label for="mode-keyword">② 키워드 검색 (TF-IDF)</label>
+          <input type="radio" name="mode" id="mode-embedding" value="embedding"><label for="mode-embedding">③ 의미 검색 (임베딩)</label>
+          <input type="radio" name="mode" id="mode-rerank" value="rerank"><label for="mode-rerank">④ 검색 + 리랭커</label>
+          <input type="radio" name="mode" id="mode-agent" value="agent"><label for="mode-agent">⑤ 에이전트 (도구 호출)</label>
+        </div>
+        <p class="modes-help" id="modes-help"></p>
+        <div class="presets" aria-label="예시 질문">
+          <button type="button" data-q="이 문서를 세 문장으로 요약해 줘.">세 문장 요약</button>
+          <button type="button" data-q="이 문서에서 가장 중요한 숫자나 날짜를 표로 정리해 줘.">숫자·날짜 표</button>
+          <button type="button" data-q="이 문서를 바탕으로 시험 문제 3개를 만들어 줘.">시험 문제 3개</button>
+          <button type="button" data-q="이 문서에 없는 내용을 물어볼게. 저자의 생일은 언제야?">없는 내용 물어보기</button>
+        </div>
+        <div class="thread" id="thread"><p class="empty-thread">먼저 왼쪽에 PDF를 올리세요. 그다음 아래에서 질문하면 됩니다.</p></div>
+        <div class="composer">
+          <input id="question" type="text" autocomplete="off" placeholder="문서에 대해 질문해 보세요" disabled>
+          <button type="button" id="send" disabled>보내기</button>
+        </div>
+        <div class="tools">
+          <button type="button" id="clear">대화 지우기</button>
+          <span id="turns" style="font-size:0.85rem;color:var(--smoke)"></span>
+        </div>
+        <details><summary>마지막으로 전송된 프롬프트 보기</summary><pre id="prompt">아직 전송된 내용이 없습니다.</pre></details>
+      </section>
+    </main>
+  </div>
+</div>
+
+<script>
+  const MAX_CHARS = {{ max_chars }}, TOP_K = {{ top_k }}, CHUNK_SIZE = {{ chunk_size }};
+  const HELP = {
+    full: "문서 전체를 system 프롬프트에 붙여 넣습니다. 짧은 문서는 이걸로 충분합니다. 앞 " + MAX_CHARS.toLocaleString("ko-KR") + "자가 넘으면 잘립니다.",
+    keyword: "문단으로 자른 청크 중 질문과 글자 조각이 많이 겹치는 " + TOP_K + "개만 보냅니다. <code>retrieve_keyword()</code>, 로컬에서 돌고 API 키가 필요 없습니다.",
+    embedding: "같은 구조지만 글자를 세는 대신 임베딩 서버(bge-m3)가 문장의 뜻을 벡터로 바꿔 비교합니다. <code>retrieve_embedding()</code>만 바뀝니다.",
+    rerank: "임베딩으로 후보 10개를 빨리 추린 뒤, 리랭커(bge-reranker)가 질문과 후보를 한 쌍씩 정독해 다시 순위를 매깁니다. <code>retrieve_rerank()</code>.",
+    agent: "retrieve를 <code>search_documents(query)</code> 도구로 감싸고, 모델이 언제 검색할지 스스로 정합니다. 1주차 계산기 에이전트와 같은 구조입니다."
+  };
+  const fileEl = document.getElementById("file"), dropEl = document.getElementById("drop"), metaEl = document.getElementById("meta");
+  const chunksEl = document.getElementById("chunks"), chunkCountEl = document.getElementById("chunk-count");
+  const threadEl = document.getElementById("thread"), questionEl = document.getElementById("question");
+  const sendBtn = document.getElementById("send"), turnsEl = document.getElementById("turns"), helpEl = document.getElementById("modes-help");
+
+  let docId = null;       // 서버가 돌려준 문서 id
+  let history = [];       // [{role, content}] — 서버에 매번 함께 보냄 (모델은 기억이 없음)
+
+  const modeOf = () => document.querySelector('input[name="mode"]:checked').value;
+  function showHelp() { helpEl.innerHTML = HELP[modeOf()]; }
+  document.querySelectorAll('input[name="mode"]').forEach(r => r.addEventListener("change", showHelp));
+  showHelp();
+
+  document.querySelectorAll(".presets button").forEach(btn =>
+    btn.addEventListener("click", () => { questionEl.value = btn.dataset.q; questionEl.focus(); }));
+
+  // ---- PDF 올리기 -----------------------------------------------------------
+  function renderChunks(chunks) {
+    chunksEl.innerHTML = "";
+    chunks.forEach(c => {
+      const el = document.createElement("div");
+      el.className = "chunk"; el.id = "chunk-" + c.id;
+      const b = document.createElement("b"); b.textContent = "청크 " + c.id + " · " + c.page + "쪽 · " + c.text.length + "자";
+      el.appendChild(b); el.appendChild(document.createTextNode(c.text));
+      chunksEl.appendChild(el);
+    });
+    chunkCountEl.textContent = chunks.length + "개 (문단 기준, " + CHUNK_SIZE + "자 넘으면 분할)";
+  }
+  function highlight(ids) {
+    document.querySelectorAll(".chunk.hit").forEach(el => el.classList.remove("hit"));
+    (ids || []).forEach(id => document.getElementById("chunk-" + id)?.classList.add("hit"));
+    if (ids && ids.length) document.getElementById("chunk-" + ids[0])?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }
+
+  async function upload(file) {
+    if (!file) return;
+    metaEl.className = "meta"; metaEl.textContent = "글자를 뽑고 청크로 자르는 중... (" + file.name + ")";
+    const form = new FormData(); form.append("file", file);
+    try {
+      const res = await fetch("/pdf/upload", { method: "POST", body: form });
+      const data = await res.json();
+      if (!res.ok) { metaEl.className = "meta warn"; metaEl.textContent = data.error; return; }
+      docId = data.doc_id;
+      renderChunks(data.chunks);
+      let info = "파일: " + data.name + "\n페이지: " + data.pages + "쪽 · 글자 수: " + data.chars.toLocaleString("ko-KR") + "자 · 청크: " + data.chunks.length + "개";
+      if (data.truncated) {
+        info += "\n\n⚠ 긴 문서입니다. ① 전체 붙여 넣기는 앞 " + MAX_CHARS.toLocaleString("ko-KR") + "자만 보내므로 뒷부분을 물으면 모델은 모릅니다. 먼저 ①로 실패를 확인한 뒤 ②③④로 바꿔 보세요.";
+        metaEl.className = "meta warn";
+      } else metaEl.className = "meta";
+      metaEl.textContent = info;
+      resetThread("문서가 준비됐습니다. 무엇이든 물어보세요.");
+      questionEl.disabled = false; sendBtn.disabled = false; questionEl.focus();
+    } catch (err) {
+      metaEl.className = "meta warn"; metaEl.textContent = "서버에 연결할 수 없습니다. app.py가 실행 중인가요?";
+    }
+  }
+  fileEl.addEventListener("change", () => upload(fileEl.files[0]));
+  ["dragenter", "dragover"].forEach(ev => dropEl.addEventListener(ev, e => { e.preventDefault(); dropEl.classList.add("over"); }));
+  ["dragleave", "drop"].forEach(ev => dropEl.addEventListener(ev, e => { e.preventDefault(); dropEl.classList.remove("over"); }));
+  dropEl.addEventListener("drop", e => upload(e.dataTransfer.files[0]));
+
+  // ---- 대화 ----------------------------------------------------------------
+  function addMsg(role, text, kind) {
+    const el = document.createElement("div");
+    el.className = "msg " + (kind || role) + " fresh";
+    if (role === "assistant" && !kind) el.innerHTML = DOMPurify.sanitize(marked.parse(text || ""));
+    else el.textContent = text;
+    threadEl.querySelector(".empty-thread")?.remove();
+    threadEl.appendChild(el);
+    threadEl.scrollTop = threadEl.scrollHeight;
+    return el;
+  }
+  function resetThread(note) {
+    history = [];
+    threadEl.innerHTML = '<p class="empty-thread">' + note + "</p>";
+    turnsEl.textContent = "";
+    document.getElementById("prompt").textContent = "아직 전송된 내용이 없습니다.";
+    highlight([]);
+  }
+  function updateTurns() {
+    const n = history.filter(h => h.role === "user").length;
+    turnsEl.textContent = n ? "지금까지 질문 " + n + "개가 매번 함께 전송됩니다" : "";
+  }
+  const MODE_LABEL = { full: "① 전체 붙여 넣기", keyword: "② 키워드 검색", embedding: "③ 의미 검색", rerank: "④ 검색 + 리랭커", agent: "⑤ 에이전트" };
+
+  function describe(mode, data) {
+    let s = MODE_LABEL[mode];
+    if (data.trace) {
+      s += data.trace.length ? "" : " · 모델이 검색 도구를 부르지 않고 바로 답했습니다";
+      data.trace.forEach(t => { s += "\n🔍 search_documents(\"" + t.query + "\") → 청크 " + (t.chunks.join(", ") || "없음"); });
+    } else if (data.retrieved) {
+      s += " · 뽑힌 청크: " + data.retrieved.map(c => c.id + " (" + c.score.toFixed(2) + ")").join(", ");
+    }
+    return s + "\n프롬프트 " + data.prompt_chars.toLocaleString("ko-KR") + "자";
+  }
+
+  async function send() {
+    const question = questionEl.value.trim();
+    if (!question || !docId) return;
+    const mode = modeOf();
+    questionEl.value = "";
+    questionEl.disabled = true; sendBtn.disabled = true;
+    addMsg("user", question);
+    const thinking = addMsg("assistant", mode === "agent" ? "모델이 검색할지 결정하는 중..." : mode === "full" ? "생각하는 중..." : "청크를 검색하고 생각하는 중...", "status");
+    try {
+      const res = await fetch("/pdf/chat", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ doc_id: docId, history, question, mode })
+      });
+      const data = await res.json();
+      thinking.remove();
+      if (!res.ok) { addMsg("assistant", data.error, "error"); }
+      else {
+        const el = addMsg("assistant", data.answer);
+        const used = document.createElement("span"); used.className = "used"; used.textContent = describe(mode, data);
+        el.appendChild(used);
+        highlight((data.retrieved || []).map(c => c.id));
+        history.push({ role: "user", content: question }, { role: "assistant", content: data.answer });
+        document.getElementById("prompt").textContent = data.prompt;
+        updateTurns();
+      }
+    } catch (err) {
+      thinking.remove(); addMsg("assistant", "서버에 연결할 수 없습니다. app.py가 실행 중인가요?", "error");
+    }
+    questionEl.disabled = false; sendBtn.disabled = false; questionEl.focus();
+  }
+  sendBtn.addEventListener("click", send);
+  questionEl.addEventListener("keydown", e => { if (e.key === "Enter") send(); });
+  document.getElementById("clear").addEventListener("click", () => resetThread(docId ? "대화를 지웠습니다. 모델은 이전 질문을 더 이상 모릅니다." : "먼저 왼쪽에 PDF를 올리세요."));
+</script>
+</body>
+</html>

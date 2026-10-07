@@ -30,6 +30,8 @@
   header { margin-bottom: 28px; }
   h1 { font: 700 clamp(2rem, 4vw, 3.1rem)/1.05 var(--display); margin: 0 0 6px; letter-spacing: -0.02em; }
   header p { margin: 0; color: var(--roast); }
+  .nav { margin-top: 10px; font-size: 0.95rem; }
+  .nav a { color: var(--matcha); font-weight: 700; }
 
   .layout { display: grid; grid-template-columns: 340px 1fr; gap: 32px; align-items: start; }
 
@@ -119,6 +121,7 @@
   <header>
     <h1>모델이 이 질문에 답할 수 있을까요?</h1>
     <p>빈 브릿지 카페에는 자체 규정이 있습니다. 모델은 이 규정을 본 적이 없습니다. 사용 중인 모델: {{ model }}</p>
+    <p class="nav"><a href="/pdf">내 PDF 올려서 대화해 보기 →</a></p>
   </header>
 
   <div class="layout">
