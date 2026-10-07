@@ -1,0 +1,29 @@
+# Render.com 배포 설정. 대시보드에서 "New > Blueprint"로 이 저장소를 고르면 자동으로 읽힙니다.
+# 업로드한 PDF는 서버 메모리에 있으므로 워커는 반드시 1개여야 합니다.
+services:
+  - type: web
+    name: rag-hook-demo
+    runtime: python
+    rootDir: rag-hook-demo
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --workers 1 --threads 8 --timeout 120
+    envVars:
+      - key: API_KEY
+        sync: false          # 대시보드에서 직접 입력 (저장소에 넣지 않음)
+      - key: BASE_URL
+        value: https://llm.aiclab.dev/v1
+      - key: MODEL
+        value: qwen3-14b
+      - key: DISABLE_THINKING
+        value: "1"
+      - key: EMBED_BASE_URL
+        value: https://embed.aiclab.dev/v1
+      - key: EMBED_MODEL
+        value: bge-m3
+      - key: RERANK_BASE_URL
+        value: https://rerank.aiclab.dev/v1
+      - key: RERANK_MODEL
+        value: bge-reranker-v2-m3
+      - key: MAX_PDF_CHARS
+        value: "40000"

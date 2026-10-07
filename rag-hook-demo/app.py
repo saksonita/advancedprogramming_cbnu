@@ -430,4 +430,7 @@ def pdf_chat():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+    # 로컬: python app.py -> http://127.0.0.1:5000
+    # 배포(Render 등)는 PORT 환경변수를 주므로 모든 주소에서 받고 디버그를 끕니다.
+    port = int(os.getenv("PORT", "5000"))
+    app.run(debug=os.getenv("PORT") is None, host="0.0.0.0" if os.getenv("PORT") else "127.0.0.1", port=port)
