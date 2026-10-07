@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Why RAG? Bean Bridge Cafe demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Courier+Prime&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --milk: #F3F5F2;
+    --paper: #FFFFFF;
+    --espresso: #2A1B12;
+    --roast: #6B5547;
+    --smoke: #9A8E84;
+    --matcha: #3F6B35;
+    --matcha-tint: #E7EFE3;
+    --line: #D9D5CF;
+    --body: "Atkinson Hyperlegible", system-ui, sans-serif;
+    --display: "Bricolage Grotesque", system-ui, sans-serif;
+    --receipt: "Courier Prime", "Courier New", monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--milk); color: var(--espresso); font: 18px/1.55 var(--body); }
+  .wrap { max-width: 1280px; margin: 0 auto; padding: 32px 28px 48px; }
+
+  header { margin-bottom: 28px; }
+  h1 { font: 700 clamp(2rem, 4vw, 3.1rem)/1.05 var(--display); margin: 0 0 6px; letter-spacing: -0.02em; }
+  header p { margin: 0; color: var(--roast); }
+
+  .layout { display: grid; grid-template-columns: 340px 1fr; gap: 32px; align-items: start; }
+
+  /* The receipt: the cafe's private information */
+  .receipt { background: var(--paper); padding: 24px 22px 30px; position: relative;
+    -webkit-mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% / 16px 100%;
+            mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% / 16px 100%; }
+  .receipt h2 { font: 700 1.05rem var(--receipt); margin: 0 0 4px; text-align: center; }
+  .receipt .hint { font: 0.8rem var(--receipt); color: var(--smoke); text-align: center; margin: 0 0 14px; }
+  .receipt textarea { width: 100%; min-height: 330px; border: 0; border-top: 1px dashed var(--line);
+    padding-top: 14px; resize: vertical; font: 0.92rem/1.6 var(--receipt); color: var(--espresso); background: transparent; }
+  .receipt textarea:focus { outline: 2px solid var(--matcha); outline-offset: 4px; }
+
+  /* Question area */
+  .ask label { display: block; font: 500 1.1rem var(--display); margin-bottom: 8px; }
+  .ask input { width: 100%; font: 1.25rem var(--body); padding: 14px 16px; border: 2px solid var(--espresso);
+    border-radius: 10px; background: var(--paper); color: var(--espresso); }
+  .ask input:focus-visible { outline: 3px solid var(--matcha); outline-offset: 2px; }
+  .presets { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 18px; }
+  .presets button { font: 0.92rem var(--body); padding: 6px 12px; border-radius: 999px; cursor: pointer;
+    border: 1px solid var(--line); background: var(--paper); color: var(--roast); }
+  .presets button:hover { border-color: var(--roast); color: var(--espresso); }
+  .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 26px; }
+  .actions button { font: 700 1rem var(--body); padding: 12px 18px; border-radius: 10px; cursor: pointer; border: 2px solid var(--espresso); }
+  .btn-plain { background: var(--paper); color: var(--espresso); }
+  .btn-rag { background: var(--matcha); border-color: var(--matcha) !important; color: #fff; }
+  .btn-both { background: var(--espresso); color: var(--milk); }
+  button:focus-visible { outline: 3px solid var(--matcha); outline-offset: 2px; }
+  button:disabled { opacity: 0.5; cursor: wait; }
+
+  /* Two answers, side by side */
+  .answers { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .panel { border-radius: 14px; padding: 20px 22px; min-height: 220px; display: flex; flex-direction: column; }
+  .panel h3 { font: 700 1.25rem var(--display); margin: 0 0 2px; }
+  .panel .sub { font-size: 0.9rem; margin: 0 0 14px; }
+  .plain { border: 2px dashed var(--smoke); background: transparent; }
+  .plain .sub { color: var(--smoke); }
+  .rag { border: 2px solid var(--matcha); background: var(--matcha-tint); }
+  .rag .sub { color: var(--matcha); }
+  .answer { white-space: pre-wrap; flex: 1; font-size: 1.15rem; }
+  .answer.empty { color: var(--smoke); font-style: italic; font-size: 1rem; }
+  .answer.error { color: #A1301F; font-size: 1rem; }
+  .attached { display: inline-block; font: 0.8rem var(--receipt); background: var(--paper); color: var(--espresso);
+    padding: 3px 8px; border-radius: 4px; margin-bottom: 10px; align-self: flex-start; }
+  details { margin-top: 14px; font-size: 0.9rem; }
+  summary { cursor: pointer; color: var(--roast); }
+  details pre { white-space: pre-wrap; font: 0.82rem/1.5 var(--receipt); background: var(--paper);
+    padding: 12px; border-radius: 8px; border: 1px solid var(--line); max-height: 260px; overflow: auto; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .answer.fresh { animation: pour 0.5s ease-out; }
+    @keyframes pour { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  }
+  @media (max-width: 900px) {
+    .layout, .answers { grid-template-columns: 1fr; }
+    .receipt textarea { min-height: 200px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Can the model answer this?</h1>
+    <p>Bean Bridge Cafe has its own rules. The model has never seen them. Model in use: {{ model }}</p>
+  </header>
+
+  <div class="layout">
+    <aside class="receipt">
+      <h2>Bean Bridge Cafe</h2>
+      <p class="hint">cafe_info.txt (you can edit this live)</p>
+      <textarea id="context" spellcheck="false" aria-label="Cafe information">{{ cafe_info }}</textarea>
+    </aside>
+
+    <main>
+      <section class="ask">
+        <label for="question">Ask a question about the cafe</label>
+        <input id="question" type="text" autocomplete="off"
+               value="At Bean Bridge Cafe, do I get a discount for bringing my own tumbler on Friday?">
+        <div class="presets" aria-label="Example questions">
+          <button type="button" data-q="At Bean Bridge Cafe, do I get a discount for bringing my own tumbler on Friday?">Tumbler discount on Friday?</button>
+          <button type="button" data-q="I have a peanut allergy. Is the almond croissant at Bean Bridge Cafe safe for me?">Peanut allergy and croissant</button>
+          <button type="button" data-q="Is Bean Bridge Cafe open on the second Monday of the month?">Open on second Monday?</button>
+          <button type="button" data-q="Does Bean Bridge Cafe have free Wi-Fi?">Free Wi-Fi? (not in the file)</button>
+        </div>
+        <div class="actions">
+          <button type="button" class="btn-plain" data-mode="plain">Ask model alone</button>
+          <button type="button" class="btn-rag" data-mode="rag">Ask with cafe info</button>
+          <button type="button" class="btn-both" data-mode="both">Ask both</button>
+        </div>
+      </section>
+
+      <section class="answers">
+        <article class="panel plain">
+          <h3>Model alone</h3>
+          <p class="sub">Answers from memory only</p>
+          <div class="answer empty" id="out-plain">No answer yet.</div>
+          <details><summary>Show the prompt sent</summary><pre id="prompt-plain">Nothing sent yet.</pre></details>
+        </article>
+        <article class="panel rag">
+          <h3>Model + cafe info</h3>
+          <p class="sub">The text on the receipt is pasted into the prompt</p>
+          <span class="attached">+ cafe_info.txt attached</span>
+          <div class="answer empty" id="out-rag">No answer yet.</div>
+          <details><summary>Show the prompt sent</summary><pre id="prompt-rag">Nothing sent yet.</pre></details>
+        </article>
+      </section>
+    </main>
+  </div>
+</div>
+
+<script>
+  const questionEl = document.getElementById("question");
+  const contextEl = document.getElementById("context");
+  const actionButtons = document.querySelectorAll(".actions button");
+
+  document.querySelectorAll(".presets button").forEach(btn =>
+    btn.addEventListener("click", () => { questionEl.value = btn.dataset.q; questionEl.focus(); }));
+
+  function show(mode, text, kind) {
+    const out = document.getElementById("out-" + mode);
+    out.className = "answer " + (kind || "") + " fresh";
+    out.textContent = text;
+  }
+
+  async function ask(mode) {
+    show(mode, "Thinking...", "empty");
+    try {
+      const res = await fetch("/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question: questionEl.value, context: contextEl.value, mode })
+      });
+      const data = await res.json();
+      if (!res.ok) { show(mode, data.error, "error"); return; }
+      show(mode, data.answer);
+      document.getElementById("prompt-" + mode).textContent = data.prompt;
+    } catch (err) {
+      show(mode, "Could not reach the server. Is app.py still running?", "error");
+    }
+  }
+
+  actionButtons.forEach(btn => btn.addEventListener("click", async () => {
+    if (!questionEl.value.trim()) { show("plain", "Type a question first.", "error"); return; }
+    actionButtons.forEach(b => b.disabled = true);
+    const modes = btn.dataset.mode === "both" ? ["plain", "rag"] : [btn.dataset.mode];
+    await Promise.all(modes.map(ask));
+    actionButtons.forEach(b => b.disabled = false);
+  }));
+
+  questionEl.addEventListener("keydown", e => {
+    if (e.key === "Enter") document.querySelector(".btn-both").click();
+  });
+</script>
+</body>
+</html>
