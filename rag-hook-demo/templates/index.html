@@ -1,12 +1,12 @@
 <!doctype html>
-<html lang="en">
+<html lang="ko">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Why RAG? Bean Bridge Cafe demo</title>
+<title>왜 RAG인가? 빈 브릿지 카페 데모</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Courier+Prime&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Courier+Prime&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
   :root {
     --milk: #F3F5F2;
@@ -17,9 +17,9 @@
     --matcha: #3F6B35;
     --matcha-tint: #E7EFE3;
     --line: #D9D5CF;
-    --body: "Atkinson Hyperlegible", system-ui, sans-serif;
-    --display: "Bricolage Grotesque", system-ui, sans-serif;
-    --receipt: "Courier Prime", "Courier New", monospace;
+    --body: "Atkinson Hyperlegible", "Noto Sans KR", system-ui, sans-serif;
+    --display: "Bricolage Grotesque", "Noto Sans KR", system-ui, sans-serif;
+    --receipt: "Courier Prime", "Courier New", "Noto Sans KR", monospace;
   }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--milk); color: var(--espresso); font: 18px/1.55 var(--body); }
@@ -31,7 +31,7 @@
 
   .layout { display: grid; grid-template-columns: 340px 1fr; gap: 32px; align-items: start; }
 
-  /* The receipt: the cafe's private information */
+  /* 영수증: 카페의 비공개 정보 */
   .receipt { background: var(--paper); padding: 24px 22px 30px; position: relative;
     -webkit-mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% / 16px 100%;
             mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% / 16px 100%; }
@@ -41,7 +41,7 @@
     padding-top: 14px; resize: vertical; font: 0.92rem/1.6 var(--receipt); color: var(--espresso); background: transparent; }
   .receipt textarea:focus { outline: 2px solid var(--matcha); outline-offset: 4px; }
 
-  /* Question area */
+  /* 질문 영역 */
   .ask label { display: block; font: 500 1.1rem var(--display); margin-bottom: 8px; }
   .ask input { width: 100%; font: 1.25rem var(--body); padding: 14px 16px; border: 2px solid var(--espresso);
     border-radius: 10px; background: var(--paper); color: var(--espresso); }
@@ -58,7 +58,7 @@
   button:focus-visible { outline: 3px solid var(--matcha); outline-offset: 2px; }
   button:disabled { opacity: 0.5; cursor: wait; }
 
-  /* Two answers, side by side */
+  /* 두 답변을 나란히 표시 */
   .answers { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
   .panel { border-radius: 14px; padding: 20px 22px; min-height: 220px; display: flex; flex-direction: column; }
   .panel h3 { font: 700 1.25rem var(--display); margin: 0 0 2px; }
@@ -90,48 +90,48 @@
 <body>
 <div class="wrap">
   <header>
-    <h1>Can the model answer this?</h1>
-    <p>Bean Bridge Cafe has its own rules. The model has never seen them. Model in use: {{ model }}</p>
+    <h1>모델이 이 질문에 답할 수 있을까요?</h1>
+    <p>빈 브릿지 카페에는 자체 규정이 있습니다. 모델은 이 규정을 본 적이 없습니다. 사용 중인 모델: {{ model }}</p>
   </header>
 
   <div class="layout">
     <aside class="receipt">
-      <h2>Bean Bridge Cafe</h2>
-      <p class="hint">cafe_info.txt (you can edit this live)</p>
-      <textarea id="context" spellcheck="false" aria-label="Cafe information">{{ cafe_info }}</textarea>
+      <h2>빈 브릿지 카페</h2>
+      <p class="hint">cafe_info.txt (여기서 바로 수정할 수 있습니다)</p>
+      <textarea id="context" spellcheck="false" aria-label="카페 정보">{{ cafe_info }}</textarea>
     </aside>
 
     <main>
       <section class="ask">
-        <label for="question">Ask a question about the cafe</label>
+        <label for="question">카페에 대해 질문해 보세요</label>
         <input id="question" type="text" autocomplete="off"
-               value="At Bean Bridge Cafe, do I get a discount for bringing my own tumbler on Friday?">
-        <div class="presets" aria-label="Example questions">
-          <button type="button" data-q="At Bean Bridge Cafe, do I get a discount for bringing my own tumbler on Friday?">Tumbler discount on Friday?</button>
-          <button type="button" data-q="I have a peanut allergy. Is the almond croissant at Bean Bridge Cafe safe for me?">Peanut allergy and croissant</button>
-          <button type="button" data-q="Is Bean Bridge Cafe open on the second Monday of the month?">Open on second Monday?</button>
-          <button type="button" data-q="Does Bean Bridge Cafe have free Wi-Fi?">Free Wi-Fi? (not in the file)</button>
+               value="빈 브릿지 카페에서 금요일에 개인 텀블러를 가져가면 할인을 받을 수 있나요?">
+        <div class="presets" aria-label="예시 질문">
+          <button type="button" data-q="빈 브릿지 카페에서 금요일에 개인 텀블러를 가져가면 할인을 받을 수 있나요?">금요일 텀블러 할인?</button>
+          <button type="button" data-q="저는 땅콩 알레르기가 있어요. 빈 브릿지 카페의 아몬드 크루아상을 먹어도 안전한가요?">땅콩 알레르기와 크루아상</button>
+          <button type="button" data-q="빈 브릿지 카페는 매달 둘째 주 월요일에 영업하나요?">둘째 주 월요일 영업?</button>
+          <button type="button" data-q="빈 브릿지 카페에 무료 와이파이가 있나요?">무료 와이파이? (파일에 없음)</button>
         </div>
         <div class="actions">
-          <button type="button" class="btn-plain" data-mode="plain">Ask model alone</button>
-          <button type="button" class="btn-rag" data-mode="rag">Ask with cafe info</button>
-          <button type="button" class="btn-both" data-mode="both">Ask both</button>
+          <button type="button" class="btn-plain" data-mode="plain">모델에게만 질문</button>
+          <button type="button" class="btn-rag" data-mode="rag">카페 정보와 함께 질문</button>
+          <button type="button" class="btn-both" data-mode="both">둘 다 질문</button>
         </div>
       </section>
 
       <section class="answers">
         <article class="panel plain">
-          <h3>Model alone</h3>
-          <p class="sub">Answers from memory only</p>
-          <div class="answer empty" id="out-plain">No answer yet.</div>
-          <details><summary>Show the prompt sent</summary><pre id="prompt-plain">Nothing sent yet.</pre></details>
+          <h3>모델 혼자</h3>
+          <p class="sub">모델의 기억만으로 답합니다</p>
+          <div class="answer empty" id="out-plain">아직 답변이 없습니다.</div>
+          <details><summary>전송된 프롬프트 보기</summary><pre id="prompt-plain">아직 전송된 내용이 없습니다.</pre></details>
         </article>
         <article class="panel rag">
-          <h3>Model + cafe info</h3>
-          <p class="sub">The text on the receipt is pasted into the prompt</p>
-          <span class="attached">+ cafe_info.txt attached</span>
-          <div class="answer empty" id="out-rag">No answer yet.</div>
-          <details><summary>Show the prompt sent</summary><pre id="prompt-rag">Nothing sent yet.</pre></details>
+          <h3>모델 + 카페 정보</h3>
+          <p class="sub">영수증의 텍스트가 프롬프트에 붙여 넣어집니다</p>
+          <span class="attached">+ cafe_info.txt 첨부됨</span>
+          <div class="answer empty" id="out-rag">아직 답변이 없습니다.</div>
+          <details><summary>전송된 프롬프트 보기</summary><pre id="prompt-rag">아직 전송된 내용이 없습니다.</pre></details>
         </article>
       </section>
     </main>
@@ -153,7 +153,7 @@
   }
 
   async function ask(mode) {
-    show(mode, "Thinking...", "empty");
+    show(mode, "생각하는 중...", "empty");
     try {
       const res = await fetch("/ask", {
         method: "POST",
@@ -165,12 +165,12 @@
       show(mode, data.answer);
       document.getElementById("prompt-" + mode).textContent = data.prompt;
     } catch (err) {
-      show(mode, "Could not reach the server. Is app.py still running?", "error");
+      show(mode, "서버에 연결할 수 없습니다. app.py가 실행 중인가요?", "error");
     }
   }
 
   actionButtons.forEach(btn => btn.addEventListener("click", async () => {
-    if (!questionEl.value.trim()) { show("plain", "Type a question first.", "error"); return; }
+    if (!questionEl.value.trim()) { show("plain", "먼저 질문을 입력하세요.", "error"); return; }
     actionButtons.forEach(b => b.disabled = true);
     const modes = btn.dataset.mode === "both" ? ["plain", "rag"] : [btn.dataset.mode];
     await Promise.all(modes.map(ask));

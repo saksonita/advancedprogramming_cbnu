@@ -1,31 +1,31 @@
-# Why RAG? A hook demo
+# 왜 RAG인가? 수업 도입용 데모
 
-A tiny web app that asks an LLM the same question twice: once on its own, and once with the cafe's information pasted into the prompt. It shows the core idea of RAG before any chunking, embeddings or vector databases.
+LLM에게 같은 질문을 두 번 던지는 아주 작은 웹 앱입니다. 한 번은 모델 혼자 답하게 하고, 한 번은 카페 정보를 프롬프트에 붙여 넣고 답하게 합니다. 청킹, 임베딩, 벡터 DB를 배우기 전에 RAG의 핵심 아이디어를 먼저 보여 줍니다.
 
-## Run it
+## 실행 방법
 
 ```bash
 pip install -r requirements.txt
-cp .env.example .env      # then put your API key in .env
+cp .env.example .env      # 그다음 .env 파일에 API 키를 넣으세요
 python app.py
 ```
 
-Open http://127.0.0.1:5000
+브라우저에서 http://127.0.0.1:5000 을 여세요.
 
-The app works with any OpenAI-compatible API. `.env.example` has settings for xAI Grok and Groq.
+OpenAI 호환 API라면 어떤 것이든 동작합니다. `.env.example`에 xAI Grok과 Groq 설정이 들어 있습니다.
 
-## How to run the demo in class
+## 수업에서 데모 진행 순서
 
-1. **Model alone.** Ask "Tumbler discount on Friday?" with *Ask model alone*. The model has never seen Bean Bridge Cafe's rules, so it guesses or says it doesn't know. Ask the class: is this answer correct? How would you know?
-2. **Model + cafe info.** Ask the same question with *Ask with cafe info*. Now it answers correctly (the discount is Tuesdays only). Open *Show the prompt sent* and point out that nothing about the model changed. We only pasted the right text into the prompt. That is RAG; the rest of the class is about automating this step.
-3. **Not in the file.** Ask "Free Wi-Fi?". A grounded answer should say the information doesn't cover it.
-4. **Edit live.** Change a rule on the receipt (for example, make the tumbler discount 1,000 won on Fridays) and ask again. The answer follows the text, not the model's memory.
-5. **Bridge question.** "This file is five lines. What if the cafe chain has a 300-page manual?" This leads into chunking and retrieval.
+1. **모델 혼자.** "금요일에 텀블러 할인되나요?"를 *모델에게만 질문*으로 물어봅니다. 모델은 빈 브릿지 카페의 규칙을 본 적이 없으므로 추측하거나 모른다고 답합니다. 학생들에게 물어보세요. 이 답이 맞나요? 어떻게 확인할 수 있을까요?
+2. **모델 + 카페 정보.** 같은 질문을 *카페 정보와 함께 질문*으로 물어봅니다. 이제 정확하게 답합니다(할인은 화요일에만). *전송된 프롬프트 보기*를 열어서 모델은 전혀 바뀌지 않았다는 점을 짚어 주세요. 우리는 올바른 텍스트를 프롬프트에 붙여 넣었을 뿐입니다. 이것이 RAG이고, 남은 수업은 이 단계를 자동화하는 방법을 다룹니다.
+3. **파일에 없는 내용.** "무료 와이파이 있나요?"를 물어봅니다. 근거 기반 답변이라면 정보에 해당 내용이 없다고 말해야 합니다.
+4. **실시간 수정.** 영수증의 규칙을 바꾸고(예: 텀블러 할인을 금요일 1,000원으로) 다시 질문합니다. 답은 모델의 기억이 아니라 텍스트를 따라갑니다.
+5. **연결 질문.** "이 파일은 다섯 줄입니다. 카페 체인에 300쪽짜리 매뉴얼이 있다면 어떻게 할까요?" 여기서 청킹과 검색으로 넘어갑니다.
 
-## Files
+## 파일 구성
 
-| File | What it does |
+| 파일 | 역할 |
 |---|---|
-| `app.py` | Flask server. `build_messages()` is the one function students should read: it shows the plain prompt vs the augmented prompt. |
-| `templates/index.html` | The demo page. |
-| `cafe_info.txt` | The cafe's private information (made up, so no model can know it). |
+| `app.py` | Flask 서버. 학생이 꼭 읽어야 할 함수는 `build_messages()` 하나입니다. 일반 프롬프트와 증강된 프롬프트의 차이를 보여 줍니다. |
+| `templates/index.html` | 데모 화면. |
+| `cafe_info.txt` | 카페의 비공개 정보(지어낸 내용이라 어떤 모델도 알 수 없습니다). |
